@@ -2,6 +2,7 @@ package com.example.jsouphelpdemo;
 
 
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -10,10 +11,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.listener.OnItemChildClickListener;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -66,6 +69,33 @@ public class MainActivity extends AppCompatActivity {
 
         rvJianshu.setLayoutManager(new LinearLayoutManager(MainActivity.this));
         rvJianshu.setAdapter(mAdapter);
+
+        rvJianshu.addOnItemTouchListener(new OnItemChildClickListener() {
+            @Override
+            public void onSimpleItemChildClick(BaseQuickAdapter adapter, View view, int position) {
+                switch (view.getId()){
+                    case R.id.tv_title:
+                    case R.id.tv_content:
+                    case R.id.iv_primary:
+                        Intent title = new Intent(MainActivity.this, ShowActivity.class);
+                        title.putExtra("link", ((JianshuBean)adapter.getItem(position)).getTitleLink());
+                        startActivity(title);
+                        break;
+                    case R.id.tv_author:
+                        Intent author = new Intent(MainActivity.this, ShowActivity.class);
+                        author.putExtra("link", ((JianshuBean)adapter.getItem(position)).getAuthorLink());
+                        startActivity(author);
+                        break;
+                    case R.id.tv_collectTag:
+//                        Intent collect = new Intent(MainActivity.this, ShowActivity.class);
+//                        collect.putExtra("link", ((JianshuBean)adapter.getItem(position)).getCollectionTagLink());
+//                        startActivity(collect);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
 
         jsoupData();
 
