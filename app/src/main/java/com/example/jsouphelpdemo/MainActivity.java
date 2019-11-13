@@ -1,10 +1,8 @@
 package com.example.jsouphelpdemo;
 
 
-
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -12,9 +10,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.RelativeLayout;
+import android.widget.ImageView;
 
+import com.bumptech.glide.Glide;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.listener.OnItemChildClickListener;
 
@@ -39,8 +37,10 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView rvJianshu;
     @BindView(R.id.srl_jianshu)
     SwipeRefreshLayout srlJianshu;
-    @BindView(R.id.activity_main)
-    RelativeLayout activityMain;
+    @BindView(R.id.iv_header)
+    ImageView ivHeader;
+    @BindView(R.id.iv_header1)
+    ImageView ivHeader1;
 
     private static final String TAG = "JsoupHelpDemo";
 
@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     private JianshuAdapter mAdapter;
 
     private static final String JIANSHU_BASE_URL = "http://www.jianshu.com";
+    private static final String TEST_URL = "https://m.toutiaocdn.com/i6750171337425175044/?app=news_article&timestamp=1571661947&req_id=201910212045460100140470770A7C1C0F&group_id=6750171337425175044&tt_from=android_share&utm_medium=toutiao_android&utm_campaign=client_share";
+    private String icon;
 
 
     @Override
@@ -73,17 +75,17 @@ public class MainActivity extends AppCompatActivity {
         rvJianshu.addOnItemTouchListener(new OnItemChildClickListener() {
             @Override
             public void onSimpleItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                switch (view.getId()){
+                switch (view.getId()) {
                     case R.id.tv_title:
                     case R.id.tv_content:
                     case R.id.iv_primary:
                         Intent title = new Intent(MainActivity.this, ShowActivity.class);
-                        title.putExtra("link", ((JianshuBean)adapter.getItem(position)).getTitleLink());
+                        title.putExtra("link", ((JianshuBean) adapter.getItem(position)).getTitleLink());
                         startActivity(title);
                         break;
                     case R.id.tv_author:
                         Intent author = new Intent(MainActivity.this, ShowActivity.class);
-                        author.putExtra("link", ((JianshuBean)adapter.getItem(position)).getAuthorLink());
+                        author.putExtra("link", ((JianshuBean) adapter.getItem(position)).getAuthorLink());
                         startActivity(author);
                         break;
                     case R.id.tv_collectTag:
@@ -99,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
 
         jsoupData();
 
+        jsoupDataTest();
+
         srlJianshu.setColorSchemeColors(Color.RED, Color.YELLOW);
         srlJianshu.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -107,6 +111,54 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private void jsoupDataTest() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Document document = null;
+                try {
+                    document = Jsoup.connect(TEST_URL)
+                            .timeout(10000)
+                            .get();
+                    Log.e(TAG, "success: " + document);
+                    Elements title = document.select("title");
+                    Log.e(TAG, "----------->title: " + title.text());
+
+                    // TODO 解析url信息;
+                    Elements link = document.select("link");
+                    String href = null;
+                    String rel = null;
+                    for (Element element : link) {
+                        Log.e(TAG, "测试解析到的数据 links : ------->element: " + element);
+                        href = element.attr("href");
+                        Log.e(TAG, "测试解析到的数据 ---->href: " + href);
+                        if (href.endsWith("ico")) {
+                            icon = href;
+                        }
+                    }
+                    Log.e(TAG, "测试解析到的数据: " + "\ntitle: " + title.text() + "\nrel: " + rel + "\nicon: " + icon);
+
+                    // 设置数据
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            Glide.with(MainActivity.this).load("https:" + icon).into(ivHeader1);
+
+                        }
+                    });
+
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+
+            }
+        }).start();
     }
 
     private void jsoupData() {
@@ -125,6 +177,24 @@ public class MainActivity extends AppCompatActivity {
                     Elements title = document.select("title");
                     Log.e(TAG, "----------->title: " + title.text());
                     Elements noteList = document.select("ul.note-list");
+
+
+                    // TODO 解析url信息;
+                    Elements link = document.select("link");
+                    String href = null;
+                    String rel = null;
+                    for (Element element : link) {
+                        Log.e(TAG, "解析到的数据links ------->element: " + element);
+                        href = element.attr("href");
+                        Log.e(TAG, "解析到的数据---->href: " + href);
+                        if (href.endsWith("ico")) {
+                            icon = href;
+                        }
+                    }
+                    Log.e(TAG, "解析到的数据: " + "\ntitle: " + title.text() + "\nrel: " + rel + "\nicon: " + icon);
+
+
+
                     Log.e(TAG, "ul.note-list: " + noteList);
                     Elements li = noteList.select("li");
                     for (Element element : li) {
@@ -163,6 +233,9 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             mAdapter.setNewData(mBeans);
                             srlJianshu.setRefreshing(false);
+
+                            Glide.with(MainActivity.this).load("https:" + icon).into(ivHeader);
+
                         }
                     });
                     Log.i(TAG, "mBeans: " + mBeans.get(0).toString());
@@ -175,11 +248,11 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    private String timeChange(String time){
+    private String timeChange(String time) {
         String[] ts = time.split("T");
         if (ts.length > 1) {
             String[] split = ts[1].split("\\+");
-            return ts[0] + "    " +  split[0];
+            return ts[0] + "    " + split[0];
         }
         return ts[0];
     }
